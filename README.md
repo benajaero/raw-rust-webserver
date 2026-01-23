@@ -10,6 +10,9 @@ and extensibility while keeping the core small and explicit.
 - Response helpers for JSON, HTML, and text
 - CLI scaffolding for new projects
 
+## Terminal Preview
+![cargo test output](docs/assets/cargo-test.svg)
+
 ## Quickstart
 ```rust
 use raw::{App, Response, Text};
