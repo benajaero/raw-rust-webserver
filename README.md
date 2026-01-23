@@ -27,6 +27,11 @@ async fn main() {
 cargo run -p raw-cli -- new my-raw-app
 ```
 
+## Examples
+```bash
+cargo run -p raw --example basic
+```
+
 ## Workspace layout
 - `crates/raw` - framework core
 - `crates/raw-cli` - CLI tools
