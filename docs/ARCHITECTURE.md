@@ -11,5 +11,10 @@ over a channel. When the pool is dropped, each worker receives a termination
 message and joins cleanly.
 
 ## Request handling
-The current request parser is minimal and looks for a `GET /` prefix in the
-byte buffer. This is intentionally simple to keep focus on concurrency basics.
+The request parser reads the request line and extracts the method, path, and
+HTTP version. Only `GET` is handled today.
+
+## Routing and static files
+- `/health` returns a plain-text `ok` response.
+- Other paths resolve to files under the configured document root.
+- `index.html` is served when the path is `/`.

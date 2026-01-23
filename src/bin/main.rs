@@ -1,50 +1,126 @@
-use std::io::prelude::*;
+use std::fs;
+use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::net::TcpStream;
-use std::fs;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+use raw_rust_webserver::config::Config;
+use raw_rust_webserver::http::{content_type_for_path, response_bytes, Method, Request, StatusCode};
 use raw_rust_webserver::ThreadPool;
 
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-    let pool = ThreadPool::new(4);
+    let config = match Config::from_env() {
+        Ok(config) => config,
+        Err(err) => {
+            eprintln!("Configuration error: {}", err);
+            std::process::exit(1);
+        }
+    };
+
+    let listener = TcpListener::bind(&config.bind_addr).unwrap_or_else(|err| {
+        eprintln!("Failed to bind {}: {}", config.bind_addr, err);
+        std::process::exit(1);
+    });
+    let pool = ThreadPool::new(config.threads);
+    let config = Arc::new(config);
 
     for stream in listener.incoming() {
-        let stream = stream.unwrap();
-
-        pool.execute(|| {
-            handle_connection(stream);
-        });
+        match stream {
+            Ok(stream) => {
+                let config = Arc::clone(&config);
+                pool.execute(|| {
+                    handle_connection(stream, config);
+                });
+            }
+            Err(err) => eprintln!("Connection failed: {}", err),
+        }
 
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
+fn handle_connection(mut stream: TcpStream, config: Arc<Config>) {
+    let mut buffer = [0; 4096];
 
-    stream.read(&mut buffer).unwrap();
-
-
-    let get = b"GET / HTTP/1.1\r\n";
-
-
-    let (status_line, filename) = if buffer.starts_with(get) {
-        ("HTTP/1.1 200 OK", "hello.html")
-    } else {
-        ("HTTP/1.1 404 NOT fOUND", "404.html")
+    let bytes_read = match stream.read(&mut buffer) {
+        Ok(0) => return,
+        Ok(bytes) => bytes,
+        Err(err) => {
+            eprintln!("Failed to read request: {}", err);
+            return;
+        }
     };
 
+    let request = match Request::parse(&buffer[..bytes_read]) {
+        Ok(request) => request,
+        Err(_) => {
+            let response = response_bytes(
+                StatusCode::BadRequest,
+                "text/plain; charset=utf-8",
+                b"Bad Request",
+            );
+            let _ = stream.write_all(&response);
+            let _ = stream.flush();
+            return;
+        }
+    };
 
-    let contents = fs::read_to_string(filename).unwrap();
+    if request.path == "/health" {
+        let response = response_bytes(StatusCode::Ok, "text/plain; charset=utf-8", b"ok");
+        let _ = stream.write_all(&response);
+        let _ = stream.flush();
+        return;
+    }
 
-    let response = format!(
-        "{}\r\nContent-Length: {}\r\n\r\n{}", 
-        status_line,
-        contents.len(),
-        contents
-        );
+    let (status, body, content_type) = match request.method {
+        Method::Get => match resolve_path(&config.doc_root, &request.path) {
+            Some(path) => match fs::read(&path) {
+                Ok(contents) => {
+                    let content_type = content_type_for_path(path.to_string_lossy().as_ref());
+                    (StatusCode::Ok, contents, content_type)
+                }
+                Err(_) => (
+                    StatusCode::NotFound,
+                    load_fallback(&config.doc_root),
+                    "text/html; charset=utf-8",
+                ),
+            },
+            None => (
+                StatusCode::BadRequest,
+                b"Bad Request".to_vec(),
+                "text/plain; charset=utf-8",
+            ),
+        },
+        Method::Other(_) => (
+            StatusCode::MethodNotAllowed,
+            b"Method Not Allowed".to_vec(),
+            "text/plain; charset=utf-8",
+        ),
+    };
 
-    stream.write(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
-
+    let response = response_bytes(status, content_type, &body);
+    let _ = stream.write_all(&response);
+    let _ = stream.flush();
 }
 
+fn resolve_path(doc_root: &Path, request_path: &str) -> Option<PathBuf> {
+    let path = request_path.split('?').next().unwrap_or("/");
+    let trimmed = path.trim_start_matches('/');
+
+    let relative = if trimmed.is_empty() {
+        "index.html"
+    } else {
+        trimmed
+    };
+
+    if relative.contains("..") {
+        return None;
+    }
+
+    Some(doc_root.join(relative))
+}
+
+fn load_fallback(doc_root: &Path) -> Vec<u8> {
+    let fallback_path = doc_root.join("404.html");
+    fs::read(&fallback_path).unwrap_or_else(|_| b"Not Found".to_vec())
+}

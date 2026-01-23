@@ -3,6 +3,9 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+pub mod config;
+pub mod http;
+
 pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: mpsc::Sender<Message>
@@ -91,4 +94,3 @@ impl Worker {
         Worker { id, thread: Some(thread) }
     }
 }
-
