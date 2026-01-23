@@ -29,6 +29,7 @@ RWS_DOC_ROOT=public
 - `src/lib.rs` - thread pool implementation
 - `public/` - static files served by the server
 - `docs/` - engineering notes and contribution guidelines
+- `CHANGELOG.md` - release notes and notable changes
 
 ## Documentation
 - `docs/ARCHITECTURE.md`

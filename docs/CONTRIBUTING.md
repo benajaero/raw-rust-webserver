@@ -7,6 +7,7 @@ Thanks for considering a contribution.
 - Prefer small, focused pull requests.
 - Add or update documentation when behavior changes.
 - Include tests when adding parsing or routing logic.
+- Keep the changelog up to date for notable changes.
 
 ## Workflow
 1. Create a feature branch.
