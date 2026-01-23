@@ -25,3 +25,8 @@ Routes support:
 Middleware is modeled after Koa-style chaining, allowing pre/post logic around
 handlers. The chain runs even when a route is not found, enabling global
 middleware like static files or logging.
+
+## Admission Control
+Routes can opt into admission control via `RoutePolicy`. Policies define a
+maximum number of in-flight requests and a cost per request. Global limits are
+also supported via `RawConfig`.
