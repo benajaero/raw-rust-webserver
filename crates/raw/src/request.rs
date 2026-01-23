@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use http::Method;
 use hyper::{Body, Request as HyperRequest};
 
+use crate::error::RawError;
+
 #[derive(Debug)]
 pub struct Request {
     inner: HyperRequest<Body>,
@@ -45,6 +47,16 @@ impl Request {
     pub fn into_body(self) -> Body {
         self.inner.into_body()
     }
+
+    pub async fn json<T>(self) -> Result<T, RawError>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        let bytes = hyper::body::to_bytes(self.inner.into_body())
+            .await
+            .map_err(|_| RawError::BadRequest)?;
+        serde_json::from_slice(&bytes).map_err(|_| RawError::BadRequest)
+    }
 }
 
 fn parse_query(query: Option<&str>) -> HashMap<String, String> {
@@ -69,11 +81,23 @@ fn parse_query(query: Option<&str>) -> HashMap<String, String> {
 #[cfg(test)]
 mod tests {
     use super::parse_query;
+    use super::Request;
+    use hyper::Body;
+    use std::collections::HashMap;
 
     #[test]
     fn parse_query_pairs() {
         let parsed = parse_query(Some("name=raw&mode=fast"));
         assert_eq!(parsed.get("name"), Some(&"raw".to_string()));
         assert_eq!(parsed.get("mode"), Some(&"fast".to_string()));
+    }
+
+    #[tokio::test]
+    async fn parse_json_body() {
+        let body = Body::from(r#"{"status":"ok"}"#);
+        let request = hyper::Request::new(body);
+        let request = Request::new(request, HashMap::new());
+        let parsed: serde_json::Value = request.json().await.expect("json");
+        assert_eq!(parsed["status"], "ok");
     }
 }
