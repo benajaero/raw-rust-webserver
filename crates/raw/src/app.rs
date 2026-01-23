@@ -8,6 +8,7 @@ use http::Method;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request as HyperRequest, Response as HyperResponse, Server};
 
+use crate::config::RawConfig;
 use crate::error::RawError;
 use crate::middleware::{handler, middleware, Middleware, Next};
 use crate::request::Request;
@@ -62,6 +63,15 @@ impl App {
 
     pub fn add_layer(&mut self, layer: Middleware) {
         self.middleware.push(layer);
+    }
+
+    pub fn run(self, config: RawConfig) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(config.worker_threads)
+            .enable_all()
+            .build()?;
+        runtime.block_on(self.listen(&config.bind_addr))?;
+        Ok(())
     }
 
     pub async fn listen(self, addr: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -127,6 +137,7 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::App;
+    use crate::config::RawConfig;
     use crate::response::{Response, Text};
 
     #[tokio::test]
@@ -134,5 +145,15 @@ mod tests {
         let mut app = App::new();
         app.get("/", |_req| async { Response::from(Text::new("ok")) });
         assert!(app.router.find(&http::Method::GET, "/").is_some());
+    }
+
+    #[test]
+    fn run_returns_error_on_invalid_addr() {
+        let app = App::new();
+        let config = RawConfig {
+            bind_addr: "invalid".to_string(),
+            worker_threads: 1,
+        };
+        assert!(app.run(config).is_err());
     }
 }
