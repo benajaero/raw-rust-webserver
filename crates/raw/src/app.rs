@@ -44,6 +44,30 @@ impl App {
         self.route(Method::POST, path, handler_fn);
     }
 
+    pub fn put<F, Fut>(&mut self, path: &str, handler_fn: F)
+    where
+        F: Fn(Request) -> Fut + Send + Sync + 'static,
+        Fut: std::future::Future<Output = Response> + Send + 'static,
+    {
+        self.route(Method::PUT, path, handler_fn);
+    }
+
+    pub fn delete<F, Fut>(&mut self, path: &str, handler_fn: F)
+    where
+        F: Fn(Request) -> Fut + Send + Sync + 'static,
+        Fut: std::future::Future<Output = Response> + Send + 'static,
+    {
+        self.route(Method::DELETE, path, handler_fn);
+    }
+
+    pub fn patch<F, Fut>(&mut self, path: &str, handler_fn: F)
+    where
+        F: Fn(Request) -> Fut + Send + Sync + 'static,
+        Fut: std::future::Future<Output = Response> + Send + 'static,
+    {
+        self.route(Method::PATCH, path, handler_fn);
+    }
+
     pub fn route<F, Fut>(&mut self, method: Method, path: &str, handler_fn: F)
     where
         F: Fn(Request) -> Fut + Send + Sync + 'static,
@@ -145,6 +169,13 @@ mod tests {
         let mut app = App::new();
         app.get("/", |_req| async { Response::from(Text::new("ok")) });
         assert!(app.router.find(&http::Method::GET, "/").is_some());
+    }
+
+    #[tokio::test]
+    async fn app_registers_put_route() {
+        let mut app = App::new();
+        app.put("/items/:id", |_req| async { Response::from(Text::new("ok")) });
+        assert!(app.router.find(&http::Method::PUT, "/items/1").is_some());
     }
 
     #[test]
