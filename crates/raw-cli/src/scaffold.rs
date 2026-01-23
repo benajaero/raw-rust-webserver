@@ -37,7 +37,7 @@ fn cargo_toml(name: &str) -> String {
 }
 
 fn main_rs() -> &'static str {
-    "// Credit: Ben Ajaero\n\nuse raw::{App, Response, Text};\n\n#[tokio::main]\nasync fn main() {\n    let mut app = App::new();\n    app.get(\"/\", |_req| async { Response::from(Text::new(\"Hello from Raw\")) });\n    app.listen(\"127.0.0.1:3000\").await.unwrap();\n}\n"
+    "// Credit: Ben Ajaero\n\nuse raw::{App, Text};\n\n#[tokio::main]\nasync fn main() {\n    let mut app = App::new();\n    app.get(\"/\", |_req| async { Text::new(\"Hello from Raw\") });\n    app.listen(\"127.0.0.1:3000\").await.unwrap();\n}\n"
 }
 
 fn readme(name: &str) -> String {

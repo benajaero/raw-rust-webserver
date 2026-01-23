@@ -17,7 +17,7 @@ use raw::{App, Response, Text};
 #[tokio::main]
 async fn main() {
     let mut app = App::new();
-    app.get("/", |_req| async { Response::from(Text::new("Hello from Raw")) });
+    app.get("/", |_req| async { Text::new("Hello from Raw") });
     app.listen("127.0.0.1:3000").await.unwrap();
 }
 ```
