@@ -1,0 +1,12 @@
+# Credit: Ben Ajaero
+
+[package]
+name = "raw"
+version = "0.1.0"
+edition = "2021"
+description = "Raw is a Rust-native web server framework."
+license = "CC-BY-NC-ND-4.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]

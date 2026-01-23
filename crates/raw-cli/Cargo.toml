@@ -1,0 +1,15 @@
+# Credit: Ben Ajaero
+
+[package]
+name = "raw-cli"
+version = "0.1.0"
+edition = "2021"
+description = "CLI tools for the Raw web framework."
+license = "CC-BY-NC-ND-4.0"
+
+[[bin]]
+name = "raw"
+path = "src/main.rs"
+
+[dependencies]
+raw = { path = "../raw" }

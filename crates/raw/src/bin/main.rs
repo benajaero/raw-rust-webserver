@@ -1,3 +1,5 @@
+// Credit: Ben Ajaero
+
 use std::fs;
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -5,9 +7,9 @@ use std::net::TcpStream;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use raw_rust_webserver::config::Config;
-use raw_rust_webserver::http::{content_type_for_path, response_bytes, Method, Request, StatusCode};
-use raw_rust_webserver::ThreadPool;
+use raw::config::Config;
+use raw::http::{content_type_for_path, response_bytes, Method, Request, StatusCode};
+use raw::ThreadPool;
 
 fn main() {
     let config = match Config::from_env() {
