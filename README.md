@@ -45,4 +45,4 @@ This repo is used for iterative improvements. Planned areas include:
 - static file routing
 
 ## License
-This project is currently unlicensed. Add a license before production use.
+Licensed under Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International.
