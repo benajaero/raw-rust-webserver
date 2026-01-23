@@ -44,6 +44,7 @@ cargo run -p raw --example basic
 - `docs/DEVELOPMENT.md`
 - `docs/CONTRIBUTING.md`
 - `docs/CONFIGURATION.md`
+- `docs/CLI.md`
 
 ## License
 Licensed under Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International.
