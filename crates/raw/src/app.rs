@@ -28,59 +28,66 @@ impl App {
         }
     }
 
-    pub fn get<F, Fut>(&mut self, path: &str, handler_fn: F)
+    pub fn get<F, Fut, R>(&mut self, path: &str, handler_fn: F)
     where
         F: Fn(Request) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = Response> + Send + 'static,
+        Fut: std::future::Future<Output = R> + Send + 'static,
+        R: Into<Response> + Send + 'static,
     {
         self.route(Method::GET, path, handler_fn);
     }
 
-    pub fn post<F, Fut>(&mut self, path: &str, handler_fn: F)
+    pub fn post<F, Fut, R>(&mut self, path: &str, handler_fn: F)
     where
         F: Fn(Request) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = Response> + Send + 'static,
+        Fut: std::future::Future<Output = R> + Send + 'static,
+        R: Into<Response> + Send + 'static,
     {
         self.route(Method::POST, path, handler_fn);
     }
 
-    pub fn put<F, Fut>(&mut self, path: &str, handler_fn: F)
+    pub fn put<F, Fut, R>(&mut self, path: &str, handler_fn: F)
     where
         F: Fn(Request) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = Response> + Send + 'static,
+        Fut: std::future::Future<Output = R> + Send + 'static,
+        R: Into<Response> + Send + 'static,
     {
         self.route(Method::PUT, path, handler_fn);
     }
 
-    pub fn delete<F, Fut>(&mut self, path: &str, handler_fn: F)
+    pub fn delete<F, Fut, R>(&mut self, path: &str, handler_fn: F)
     where
         F: Fn(Request) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = Response> + Send + 'static,
+        Fut: std::future::Future<Output = R> + Send + 'static,
+        R: Into<Response> + Send + 'static,
     {
         self.route(Method::DELETE, path, handler_fn);
     }
 
-    pub fn patch<F, Fut>(&mut self, path: &str, handler_fn: F)
+    pub fn patch<F, Fut, R>(&mut self, path: &str, handler_fn: F)
     where
         F: Fn(Request) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = Response> + Send + 'static,
+        Fut: std::future::Future<Output = R> + Send + 'static,
+        R: Into<Response> + Send + 'static,
     {
         self.route(Method::PATCH, path, handler_fn);
     }
 
-    pub fn route<F, Fut>(&mut self, method: Method, path: &str, handler_fn: F)
+    pub fn route<F, Fut, R>(&mut self, method: Method, path: &str, handler_fn: F)
     where
         F: Fn(Request) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = Response> + Send + 'static,
+        Fut: std::future::Future<Output = R> + Send + 'static,
+        R: Into<Response> + Send + 'static,
     {
         let wrapped = handler(handler_fn);
         self.router.add(method, path, wrapped);
     }
 
-    pub fn add_middleware<F, Fut>(&mut self, middleware_fn: F)
+    pub fn add_middleware<F, Fut, R>(&mut self, middleware_fn: F)
     where
         F: Fn(Request, Next) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = Response> + Send + 'static,
+        Fut: std::future::Future<Output = R> + Send + 'static,
+        R: Into<Response> + Send + 'static,
     {
         self.middleware.push(middleware(middleware_fn));
     }

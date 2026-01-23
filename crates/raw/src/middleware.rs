@@ -41,18 +41,28 @@ impl Next {
     }
 }
 
-pub fn handler<F, Fut>(f: F) -> Handler
+pub fn handler<F, Fut, R>(f: F) -> Handler
 where
     F: Fn(Request) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = Response> + Send + 'static,
+    Fut: Future<Output = R> + Send + 'static,
+    R: Into<Response> + Send + 'static,
 {
-    Arc::new(move |req| Box::pin(f(req)))
+    let f = Arc::new(f);
+    Arc::new(move |req| {
+        let f = Arc::clone(&f);
+        Box::pin(async move { f(req).await.into() })
+    })
 }
 
-pub fn middleware<F, Fut>(f: F) -> Middleware
+pub fn middleware<F, Fut, R>(f: F) -> Middleware
 where
     F: Fn(Request, Next) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = Response> + Send + 'static,
+    Fut: Future<Output = R> + Send + 'static,
+    R: Into<Response> + Send + 'static,
 {
-    Arc::new(move |req, next| Box::pin(f(req, next)))
+    let f = Arc::new(f);
+    Arc::new(move |req, next| {
+        let f = Arc::clone(&f);
+        Box::pin(async move { f(req, next).await.into() })
+    })
 }
