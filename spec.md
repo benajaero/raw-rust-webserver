@@ -3,6 +3,17 @@
 ## Overview
 Raw is a Rust-native web server framework focused on ergonomic routing, middleware, and extensibility while retaining strong performance and explicit control. The framework targets building HTTP services and web applications with minimal boilerplate and a clear, composable API.
 
+## Unique Infrastructure Need
+Rust server teams building multi-tenant services often struggle with predictable latency under load. Existing frameworks tend to leave admission control to external proxies or bespoke middleware. Raw addresses this gap with built-in, per-route admission control designed for fairness, frugality, and explicit resource budgeting.
+
+## Mohist Design Principles
+Raw adopts Mohist principles as engineering constraints:
+- **Universal benefit**: fairness across routes and tenants by default.
+- **Frugality**: minimal overhead, no hidden allocations.
+- **Merit and clarity**: explicit policies for cost and concurrency.
+- **Non-aggression**: shed load early to protect system health.
+- **Plain design**: simple primitives over implicit magic.
+
 ## Goals
 - Provide a production-ready HTTP framework with a clean, opinionated core.
 - Offer fast request routing, middleware composition, and structured responses.
@@ -39,6 +50,11 @@ Raw is a Rust-native web server framework focused on ergonomic routing, middlewa
 - Koa-style middleware chain using async handlers.
 - Built-in middleware: logging, request ID, CORS, compression, static files.
 
+### Admission Control (Mohist Core)
+- Per-route policies for max in-flight requests and cost units.
+- Global concurrency limit to protect system capacity.
+- Fast rejection with `503 Service Unavailable` when capacity is exhausted.
+
 ### Error Handling
 - Unified error type with HTTP status mapping.
 - Custom error handlers per app or per route.
@@ -72,7 +88,7 @@ Raw is a Rust-native web server framework focused on ergonomic routing, middlewa
 
 ### Modules
 - `server` - listener, runtime, graceful shutdown
-- `router` - route table, matchers
+- `router` - route table, matchers, route policies
 - `request` - request parsing, body extraction
 - `response` - response builders, body types
 - `middleware` - middleware traits and chain
@@ -83,19 +99,21 @@ Raw is a Rust-native web server framework focused on ergonomic routing, middlewa
 
 ## API Sketch
 ```rust
-use raw::{App, Router, response::Html};
+use raw::{App, RoutePolicy, Text};
 
 #[tokio::main]
 async fn main() {
     let mut app = App::new();
 
-    app.get("/", |_req| async {
-        Html::new("<h1>Hello from Raw</h1>")
-    });
+    app.get("/", |_req| async { Text::new("Hello from Raw") });
 
-    app.get("/users/:id", |req| async move {
-        let id = req.param("id");
-        raw::response::Json::new(serde_json::json!({"id": id}))
+    let policy = RoutePolicy {
+        max_in_flight: Some(16),
+        cost: 1,
+    };
+
+    app.get_with("/reports/:id", policy, |_req| async {
+        Text::new("report")
     });
 
     app.listen("127.0.0.1:3000").await.unwrap();
@@ -108,6 +126,7 @@ async fn main() {
 3. Static files and JSON helpers.
 4. CLI scaffolding and templates.
 5. Observability and configuration polish.
+6. Mohist admission control.
 
 ## Quality Targets
 - 90%+ test coverage on core routing and middleware.
