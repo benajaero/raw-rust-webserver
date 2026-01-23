@@ -26,6 +26,19 @@ impl Response {
         Self { inner: response }
     }
 
+    pub fn status(&self) -> StatusCode {
+        self.inner.status()
+    }
+
+    pub fn with_header(mut self, name: &str, value: &str) -> Self {
+        let header_name = http::header::HeaderName::from_bytes(name.as_bytes());
+        let header_value = http::HeaderValue::from_str(value);
+        if let (Ok(name), Ok(value)) = (header_name, header_value) {
+            self.inner.headers_mut().insert(name, value);
+        }
+        self
+    }
+
     pub fn into_inner(self) -> HyperResponse<Body> {
         self.inner
     }
