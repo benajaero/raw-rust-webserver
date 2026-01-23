@@ -1,48 +1,53 @@
 // Credit: Ben Ajaero
 
 use std::env;
-use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
-pub struct Config {
+pub struct RawConfig {
     pub bind_addr: String,
-    pub threads: usize,
-    pub doc_root: PathBuf,
+    pub worker_threads: usize,
 }
 
-impl Config {
-    pub fn from_env() -> Result<Config, String> {
-        let bind_addr = env::var("RWS_BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:7878".to_string());
-        let threads = match env::var("RWS_THREADS") {
-            Ok(value) => parse_threads(&value)?,
+impl RawConfig {
+    pub fn from_env() -> Result<Self, String> {
+        let bind_addr = env::var("RAW_BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".to_string());
+        let worker_threads = match env::var("RAW_WORKERS") {
+            Ok(value) => parse_workers(&value)?,
             Err(_) => 4,
         };
-        let doc_root = env::var("RWS_DOC_ROOT").unwrap_or_else(|_| "public".to_string());
 
-        Ok(Config {
+        Ok(Self {
             bind_addr,
-            threads,
-            doc_root: PathBuf::from(doc_root),
+            worker_threads,
         })
     }
 }
 
-fn parse_threads(value: &str) -> Result<usize, String> {
+impl Default for RawConfig {
+    fn default() -> Self {
+        Self {
+            bind_addr: "127.0.0.1:3000".to_string(),
+            worker_threads: 4,
+        }
+    }
+}
+
+fn parse_workers(value: &str) -> Result<usize, String> {
     let parsed: usize = value
         .parse()
-        .map_err(|_| "RWS_THREADS must be a positive integer".to_string())?;
+        .map_err(|_| "RAW_WORKERS must be a positive integer".to_string())?;
     if parsed == 0 {
-        return Err("RWS_THREADS must be greater than zero".to_string());
+        return Err("RAW_WORKERS must be greater than zero".to_string());
     }
     Ok(parsed)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::parse_threads;
+    use super::parse_workers;
 
     #[test]
-    fn parse_threads_rejects_zero() {
-        assert!(parse_threads("0").is_err());
+    fn parse_workers_rejects_zero() {
+        assert!(parse_workers("0").is_err());
     }
 }
