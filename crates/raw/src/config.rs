@@ -6,6 +6,7 @@ use std::env;
 pub struct RawConfig {
     pub bind_addr: String,
     pub worker_threads: usize,
+    pub max_in_flight: Option<usize>,
 }
 
 impl RawConfig {
@@ -15,10 +16,15 @@ impl RawConfig {
             Ok(value) => parse_workers(&value)?,
             Err(_) => 4,
         };
+        let max_in_flight = match env::var("RAW_MAX_IN_FLIGHT") {
+            Ok(value) => Some(parse_workers(&value)?),
+            Err(_) => None,
+        };
 
         Ok(Self {
             bind_addr,
             worker_threads,
+            max_in_flight,
         })
     }
 }
@@ -28,6 +34,7 @@ impl Default for RawConfig {
         Self {
             bind_addr: "127.0.0.1:3000".to_string(),
             worker_threads: 4,
+            max_in_flight: None,
         }
     }
 }
@@ -45,9 +52,19 @@ fn parse_workers(value: &str) -> Result<usize, String> {
 #[cfg(test)]
 mod tests {
     use super::parse_workers;
+    use super::RawConfig;
+    use std::env;
 
     #[test]
     fn parse_workers_rejects_zero() {
         assert!(parse_workers("0").is_err());
+    }
+
+    #[test]
+    fn raw_config_reads_max_in_flight() {
+        env::set_var("RAW_MAX_IN_FLIGHT", "12");
+        let config = RawConfig::from_env().expect("config");
+        assert_eq!(config.max_in_flight, Some(12));
+        env::remove_var("RAW_MAX_IN_FLIGHT");
     }
 }

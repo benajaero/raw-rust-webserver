@@ -17,3 +17,4 @@ pub use request::Request;
 pub use response::{Html, Json, Response, StatusCode, Text};
 pub use static_files::static_files;
 pub use middleware_builtin::{logger, request_id};
+pub use router::RoutePolicy;

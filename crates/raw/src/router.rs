@@ -4,7 +4,26 @@ use std::collections::HashMap;
 
 use http::Method;
 
+use std::sync::Arc;
+
+use tokio::sync::Semaphore;
+
 use crate::middleware::Handler;
+
+#[derive(Debug, Clone)]
+pub struct RoutePolicy {
+    pub max_in_flight: Option<usize>,
+    pub cost: u32,
+}
+
+impl Default for RoutePolicy {
+    fn default() -> Self {
+        Self {
+            max_in_flight: None,
+            cost: 1,
+        }
+    }
+}
 
 pub struct Router {
     routes: Vec<Route>,
@@ -15,12 +34,17 @@ impl Router {
         Self { routes: Vec::new() }
     }
 
-    pub fn add(&mut self, method: Method, path: &str, handler: Handler) {
+    pub fn add(&mut self, method: Method, path: &str, handler: Handler, policy: RoutePolicy) {
         let pattern = PathPattern::new(path);
+        let semaphore = policy
+            .max_in_flight
+            .map(|limit| Arc::new(Semaphore::new(limit)));
         self.routes.push(Route {
             method,
             pattern,
             handler,
+            policy,
+            semaphore,
         });
     }
 
@@ -33,6 +57,8 @@ impl Router {
                 return Some(RouteMatch {
                     handler: route.handler.clone(),
                     params,
+                    policy: route.policy.clone(),
+                    semaphore: route.semaphore.clone(),
                 });
             }
         }
@@ -50,11 +76,15 @@ struct Route {
     method: Method,
     pattern: PathPattern,
     handler: Handler,
+    policy: RoutePolicy,
+    semaphore: Option<Arc<Semaphore>>,
 }
 
 pub struct RouteMatch {
     pub handler: Handler,
     pub params: HashMap<String, String>,
+    pub policy: RoutePolicy,
+    pub semaphore: Option<Arc<Semaphore>>,
 }
 
 #[derive(Debug, Clone)]

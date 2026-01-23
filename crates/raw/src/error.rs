@@ -7,6 +7,7 @@ pub enum RawError {
     BadRequest,
     NotFound,
     MethodNotAllowed,
+    Overloaded,
     Internal(String),
 }
 
@@ -18,6 +19,11 @@ impl RawError {
             RawError::MethodNotAllowed => {
                 Response::new(StatusCode::METHOD_NOT_ALLOWED, "Method Not Allowed", "text/plain")
             }
+            RawError::Overloaded => Response::new(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Service Unavailable",
+                "text/plain",
+            ),
             RawError::Internal(message) => {
                 Response::new(StatusCode::INTERNAL_SERVER_ERROR, message, "text/plain")
             }
