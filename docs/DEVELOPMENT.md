@@ -8,14 +8,9 @@
 cargo build
 ```
 
-## Run
+## Test
 ```bash
-cargo run
-```
-
-## Configure
-```bash
-RWS_BIND_ADDR=127.0.0.1:7878 RWS_THREADS=4 RWS_DOC_ROOT=public cargo run
+cargo test
 ```
 
 ## Format
@@ -26,4 +21,9 @@ cargo fmt
 ## Lint
 ```bash
 cargo clippy
+```
+
+## CLI
+```bash
+cargo run -p raw-cli -- new my-raw-app
 ```

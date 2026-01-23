@@ -1,48 +1,44 @@
-# raw-rust-webserver
+# Raw
 
-A minimal, multi-threaded HTTP server built with the Rust standard library.
-This project is intentionally small and dependency-free to make the core ideas
-of networking, request handling, and thread pools easy to study.
+Raw is a Rust-native web server framework focused on ergonomic routing, middleware,
+and extensibility while keeping the core small and explicit.
 
 ## Features
-- Fixed-size thread pool
-- Minimal HTTP request parsing
-- Serves static files from `public/`
-- Health check at `/health`
-- Environment-based configuration
+- Async HTTP server built on Tokio + Hyper
+- Declarative routing with params and wildcards
+- Middleware chain (request ID, logging, static files)
+- Response helpers for JSON, HTML, and text
+- CLI scaffolding for new projects
 
 ## Quickstart
-```bash
-cargo run
-```
-Then open `http://127.0.0.1:7878` in a browser.
+```rust
+use raw::{App, Response, Text};
 
-### Configuration
-```bash
-RWS_BIND_ADDR=127.0.0.1:7878
-RWS_THREADS=4
-RWS_DOC_ROOT=public
+#[tokio::main]
+async fn main() {
+    let mut app = App::new();
+    app.get("/", |_req| async { Response::from(Text::new("Hello from Raw")) });
+    app.listen("127.0.0.1:3000").await.unwrap();
+}
 ```
 
-## Project layout
-- `src/bin/main.rs` - server entrypoint and connection handling
-- `src/lib.rs` - thread pool implementation
-- `public/` - static files served by the server
-- `docs/` - engineering notes and contribution guidelines
-- `CHANGELOG.md` - release notes and notable changes
+## CLI
+```bash
+cargo run -p raw-cli -- new my-raw-app
+```
+
+## Workspace layout
+- `crates/raw` - framework core
+- `crates/raw-cli` - CLI tools
+- `docs/` - documentation and engineering notes
 
 ## Documentation
+- `spec.md`
+- `codex.md`
 - `docs/ARCHITECTURE.md`
 - `docs/DEVELOPMENT.md`
 - `docs/CONTRIBUTING.md`
 - `docs/CONFIGURATION.md`
-
-## Roadmap
-This repo is used for iterative improvements. Planned areas include:
-- better HTTP parsing and headers
-- configurable bind address and thread count
-- structured logging and error handling
-- static file routing
 
 ## License
 Licensed under Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International.
