@@ -13,3 +13,4 @@ path = "src/main.rs"
 
 [dependencies]
 raw = { path = "../raw" }
+clap = { version = "4", features = ["derive"] }
