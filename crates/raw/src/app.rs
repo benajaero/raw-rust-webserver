@@ -60,6 +60,10 @@ impl App {
         self.middleware.push(middleware(middleware_fn));
     }
 
+    pub fn add_layer(&mut self, layer: Middleware) {
+        self.middleware.push(layer);
+    }
+
     pub async fn listen(self, addr: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let listener = TcpListener::bind(addr).map_err(|err| {
             eprintln!("Failed to bind {}: {}", addr, err);
@@ -97,17 +101,24 @@ impl App {
         let method = req.method().clone();
         let path = req.uri().path().to_string();
 
-        let response = if let Some(route_match) = self.router.find(&method, &path) {
-            let request = Request::new(req, route_match.params);
-            let handler = route_match.handler;
-            let middleware = Arc::new(self.middleware.clone());
-            let next = Next::new(middleware, handler);
-            next.run(request).await
-        } else if self.router.allows_path(&path) {
-            RawError::MethodNotAllowed.into_response()
+        let (handler, params) = if let Some(route_match) = self.router.find(&method, &path) {
+            (route_match.handler, route_match.params)
         } else {
-            RawError::NotFound.into_response()
+            let method_not_allowed = self.router.allows_path(&path);
+            let fallback = handler(move |_req| async move {
+                if method_not_allowed {
+                    RawError::MethodNotAllowed.into_response()
+                } else {
+                    RawError::NotFound.into_response()
+                }
+            });
+            (fallback, std::collections::HashMap::new())
         };
+
+        let request = Request::new(req, params);
+        let middleware = Arc::new(self.middleware.clone());
+        let next = Next::new(middleware, handler);
+        let response = next.run(request).await;
 
         Ok(response.into_inner())
     }
