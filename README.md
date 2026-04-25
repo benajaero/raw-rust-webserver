@@ -75,7 +75,6 @@ cargo run -p raw --example basic
 
 ## Documentation
 - `spec.md`
-- `codex.md`
 - `docs/ARCHITECTURE.md`
 - `docs/DEVELOPMENT.md`
 - `docs/CONTRIBUTING.md`
